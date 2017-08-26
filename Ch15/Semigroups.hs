@@ -145,6 +145,47 @@ type ValidationAssoc = Validation [Int] [Int]
                      -> Bool
 
 -- -------------------------
+
+newtype AccumulateRight a b = AccumulateRight (Validation a b)
+    deriving (Eq, Show)
+
+instance Semigroup b => Semigroup (AccumulateRight a b) where
+  AccumulateRight (Failure _) <> AccumulateRight f@(Failure _) = AccumulateRight f
+  AccumulateRight s@(Success _) <> AccumulateRight (Failure _) = AccumulateRight s
+  AccumulateRight (Failure _) <> AccumulateRight s@(Success _) = AccumulateRight s
+  AccumulateRight (Success b1) <> AccumulateRight (Success b2) 
+    = AccumulateRight (Success (b1 <> b2))
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (AccumulateRight a b)
+  where arbitrary = fmap AccumulateRight arbitrary
+
+type AccumulateRightAssoc = AccumulateRight [Int] [Int] 
+                         -> AccumulateRight [Int] [Int]
+                         -> AccumulateRight [Int] [Int]
+                         -> Bool
+
+-- -------------------------
+
+newtype AccumulateBoth a b = AccumulateBoth (Validation a b)
+    deriving (Eq, Show)
+
+instance (Semigroup a, Semigroup b) => Semigroup (AccumulateBoth a b) where
+  AccumulateBoth (Failure a1) <> AccumulateBoth (Failure a2) = 
+      AccumulateBoth $ Failure $ a1 <> a2
+  AccumulateBoth s@(Success _) <> AccumulateBoth (Failure _) = AccumulateBoth s
+  AccumulateBoth (Failure _) <> AccumulateBoth s@(Success _) = AccumulateBoth s
+  AccumulateBoth (Success b1) <> AccumulateBoth (Success b2) = 
+    AccumulateBoth (Success (b1 <> b2))
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (AccumulateBoth a b)
+  where arbitrary = fmap AccumulateBoth arbitrary
+
+type AccumulateBothAssoc = AccumulateBoth [Int] [Int] 
+                        -> AccumulateBoth [Int] [Int]
+                        -> AccumulateBoth [Int] [Int]
+                        -> Bool
+
+-- -------------------------
 -- -------------------------
 
 main :: IO () 
@@ -158,3 +199,5 @@ main = do
   quickCheck (semigroupAssoc :: BoolDisjAssoc)
   quickCheck (semigroupAssoc :: OrAssoc)
   quickCheck (semigroupAssoc :: ValidationAssoc)
+  quickCheck (semigroupAssoc :: AccumulateRightAssoc)
+  quickCheck (semigroupAssoc :: AccumulateBothAssoc)
