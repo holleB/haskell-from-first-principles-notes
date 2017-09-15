@@ -1,0 +1,24 @@
+(.) :: (b -> c) -> (a -> b) -> a -> c
+--       fmap1       fmap2
+
+-- with following type annotations:
+fmap1 :: Functor f => (m -> n) -> f m -> f n 
+fmap2 :: Functor g => (x -> y) -> g x -> g y
+
+-- inserted here:
+(.) :: ((m -> n) -> (f m -> f n) -> ((x -> y) -> (g x -> g y)) -> a -> c
+
+-- we immediately see the following relations:
+(m -> n) :: (g x -> g y)
+a :: (x -> y)
+c :: (f m -> f n)
+
+-- and:
+m :: g x
+n :: g y
+
+-- so:
+c :: (f (g x) -> f (g y))
+
+resulting in
+(fmap1 . fmap2) :: (Functor f, Functor g) => (x -> y) -> f (g x) -> f (g y)
